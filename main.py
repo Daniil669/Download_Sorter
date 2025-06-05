@@ -4,6 +4,7 @@ from watchdog.observers import Observer #will be watching for download directory
 from watchdog.events import FileSystemEventHandler #for different file system evenst
 import subprocess #runs subprocesses
 import time
+import dotenv
 
 extensions = {"documents": ["pdf", "doc", "docx", "odt", "rtf", "txt", "xlsx", "xlsm", "xltx", "xlsb"] , 
                 "pictures": ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "avif", "webp"], 
@@ -20,7 +21,7 @@ VIDEOS_FOLDER_PATH = "C:/Users/dann0/Videos"
 APP_NAME = "DownloadSorter"
 
 class DownloadHanlder(FileSystemEventHandler):
-    def on_created(self, event): #self references to instance of an object not class
+    def on_created(self, event):
         if event.is_directory: #checks if event was done to the directory itself like renaming and ignores it
             return
 
@@ -29,7 +30,7 @@ class DownloadHanlder(FileSystemEventHandler):
 
         try:
 
-            while True: # check if a file is still downloading; nothing happens if file was cancelled or still downloading, after it's been downloaded it's sorted out
+            while True: # checks if a file is still downloading; nothing happens if file was cancelled or still downloading, after it's been downloaded it's sorted out
                 if os.path.exists(file_path):
                     time.sleep(0.5)
                     continue
