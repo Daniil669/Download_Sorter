@@ -5,18 +5,21 @@ from watchdog.events import FileSystemEventHandler #for different file system ev
 import subprocess #runs subprocesses
 import time
 import dotenv
+import os
+
+dotenv.load_dotenv()
 
 extensions = {"documents": ["pdf", "doc", "docx", "odt", "rtf", "txt", "xlsx", "xlsm", "xltx", "xlsb"] , 
                 "pictures": ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "avif", "webp"], 
                 "music": ["mp3", "wav", "flac", "ogg", "aac"], 
                 "videos": ["mp4", "avi", "mov", "mkv", "wmv"]}
 
-DOWNLOAD_FOLDER_PATH = "C:/Users/dann0/Downloads"
+DOWNLOAD_FOLDER_PATH = os.getenv("DOWNLOAD_FOLDER_PATH")
 
-DOCUMENTS_FOLDER_PATH = "C:/Users/dann0/Documents"
-PICTURES_FOLDER_PATH = "C:/Users/dann0/Pictures"
-MUSIC_FOLDER_PATH = "C:/Users/dann0/Music"
-VIDEOS_FOLDER_PATH = "C:/Users/dann0/Videos"
+DOCUMENTS_FOLDER_PATH = os.getenv("DOCUMENTS_FOLDER_PATH")
+PICTURES_FOLDER_PATH = os.getenv("PICTURES_FOLDER_PATH")
+MUSIC_FOLDER_PATH = os.getenv("MUSIC_FOLDER_PATH")
+VIDEOS_FOLDER_PATH = os.getenv("VIDEOS_FOLDER_PATH")
 
 APP_NAME = "DownloadSorter"
 
