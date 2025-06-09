@@ -6,6 +6,9 @@ import subprocess #runs subprocesses
 import time
 import dotenv
 import os
+import pystray
+from PIL import Image, ImageDraw
+import threading
 
 dotenv.load_dotenv()
 
@@ -13,6 +16,8 @@ extensions = {"documents": ["pdf", "doc", "docx", "odt", "rtf", "txt", "xlsx", "
                 "pictures": ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "avif", "webp"], 
                 "music": ["mp3", "wav", "flac", "ogg", "aac"], 
                 "videos": ["mp4", "avi", "mov", "mkv", "wmv"]}
+
+is_running = True
 
 DOWNLOAD_FOLDER_PATH = os.getenv("DOWNLOAD_FOLDER_PATH")
 
@@ -25,6 +30,10 @@ APP_NAME = "DownloadSorter"
 
 class DownloadHanlder(FileSystemEventHandler):
     def on_created(self, event):
+        global is_running
+        if not is_running: #check the global state of the app
+           return
+         
         if event.is_directory: #checks if event was done to the directory itself like renaming and ignores it
             return
 
@@ -68,19 +77,74 @@ class DownloadHanlder(FileSystemEventHandler):
                 subprocess.run(["cmd", "/c", f"echo {error_message} && pause"]) #opens cmd and shows message and pauses so it won't close
             except NameError:
                 print(f"Failed to open cmd: {NameError}")
-      
+
+# Generate an image and draw a pattern
+def create_image(width, height, color1, color2):
+    image = Image.new('RGB', (width, height), color1)
+    dc = ImageDraw.Draw(image)
+    dc.rectangle(
+        (width // 2, 0, width, height // 2),
+        fill=color2)
+    dc.rectangle(
+        (0, height // 2, width // 2, height),
+        fill=color2)
+
+    return image
+
+#Changes state of the app after an interaction with the tray icon
+def change_app_state():
+    global is_running
+    if is_running:
+        is_running = False
+        return
+    is_running = True
+    return
+
+#tray icon actions; query is basically option in the menu
+def icon_actions(icon, query):
+    global is_running
+    if str(query) == "Pause":
+        change_app_state()
+    elif str(query) == "Continue":
+        change_app_state()
+    elif str(query) == "Exit":
+        icon.stop()
+
+
+def download_surveillance(icon=None):
+    try:
+        event_handler = DownloadHanlder()
+        observer = Observer()
+        observer.schedule(event_handler, DOWNLOAD_FOLDER_PATH, recursive=False)
+        observer.start()
+        
+        print(f"{APP_NAME} has started and monitoring downloads...")
+
+        try:
+            while True:
+                pass
+        except KeyboardInterrupt:
+            observer.stop()
+        observer.join()
+    except NameError:
+        print(f"In download surveillance: {NameError}")
+
+
 
 if __name__ == "__main__":
-    event_handler = DownloadHanlder()
-    observer = Observer()
-    observer.schedule(event_handler, DOWNLOAD_FOLDER_PATH, recursive=False)
-
-    observer.start()
-    print(f"{APP_NAME} has started and monitoring downloads...")
-
     try:
-        while True:
-            pass
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()
+        icon = pystray.Icon(
+        'Download_Sorter',
+        icon=create_image(64, 64, 'black', 'white'),
+        title="Download Sorter", 
+        menu=pystray.Menu(
+            pystray.MenuItem(lambda option : 'Pause' if is_running else 'Continue',icon_actions),
+            pystray.MenuItem(
+                'Exit',
+                icon_actions
+            )
+        ))
+
+        icon.run()
+    except NameError:
+        print(f"In main: {NameError}")
