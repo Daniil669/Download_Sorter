@@ -5,10 +5,9 @@ from watchdog.events import FileSystemEventHandler #for different file system ev
 import subprocess #runs subprocesses
 import time
 import dotenv
-import os
 import pystray
 from PIL import Image, ImageDraw
-import threading
+import threading #to surveillance for downloading folder and interact with trace icon
 
 dotenv.load_dotenv()
 
@@ -17,7 +16,8 @@ extensions = {"documents": ["pdf", "doc", "docx", "odt", "rtf", "txt", "xlsx", "
                 "music": ["mp3", "wav", "flac", "ogg", "aac"], 
                 "videos": ["mp4", "avi", "mov", "mkv", "wmv"]}
 
-is_running = True
+is_running = True #used for pause and continue options
+is_exit = threading.Event() #used for properly exiting the app
 
 DOWNLOAD_FOLDER_PATH = os.getenv("DOWNLOAD_FOLDER_PATH")
 
@@ -26,7 +26,7 @@ PICTURES_FOLDER_PATH = os.getenv("PICTURES_FOLDER_PATH")
 MUSIC_FOLDER_PATH = os.getenv("MUSIC_FOLDER_PATH")
 VIDEOS_FOLDER_PATH = os.getenv("VIDEOS_FOLDER_PATH")
 
-APP_NAME = "DownloadSorter"
+APP_NAME = "Download Sorter"
 
 class DownloadHanlder(FileSystemEventHandler):
     def on_created(self, event):
@@ -102,16 +102,19 @@ def change_app_state():
 
 #tray icon actions; query is basically option in the menu
 def icon_actions(icon, query):
-    global is_running
+    global is_running, is_exit
     if str(query) == "Pause":
         change_app_state()
     elif str(query) == "Continue":
         change_app_state()
     elif str(query) == "Exit":
         icon.stop()
+        is_exit.set()
+        #signal the observer to stop
 
 
-def download_surveillance(icon=None):
+def download_surveillance():
+    global is_exit
     try:
         event_handler = DownloadHanlder()
         observer = Observer()
@@ -120,31 +123,45 @@ def download_surveillance(icon=None):
         
         print(f"{APP_NAME} has started and monitoring downloads...")
 
-        try:
-            while True:
-                pass
-        except KeyboardInterrupt:
-            observer.stop()
+        while not is_exit.is_set():
+            time.sleep(1)
+            continue
+
+        observer.stop()
         observer.join()
     except NameError:
         print(f"In download surveillance: {NameError}")
 
-
-
-if __name__ == "__main__":
+def icon_initialize():
     try:
         icon = pystray.Icon(
         'Download_Sorter',
         icon=create_image(64, 64, 'black', 'white'),
         title="Download Sorter", 
         menu=pystray.Menu(
-            pystray.MenuItem(lambda option : 'Pause' if is_running else 'Continue',icon_actions),
+            pystray.MenuItem(lambda option: 'Pause' if is_running else 'Continue',icon_actions),
             pystray.MenuItem(
                 'Exit',
                 icon_actions
             )
         ))
-
         icon.run()
     except NameError:
         print(f"In main: {NameError}")
+
+
+
+if __name__ == "__main__":
+    try:
+        thread_1 = threading.Thread(target=icon_initialize)
+        thread_2 = threading.Thread(target=download_surveillance)
+
+        thread_1.start()
+        thread_2.start()
+
+        if is_exit.wait(timeout=None):
+            thread_1.join()
+            thread_2.join()
+
+    except NameError:
+        print(NameError)
