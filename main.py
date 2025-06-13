@@ -8,16 +8,17 @@ import dotenv
 import pystray
 from PIL import Image, ImageDraw
 import threading #to surveillance for downloading folder and interact with trace icon
+import logging #replace prints with logs
 
 dotenv.load_dotenv()
+
 
 extensions = {"documents": ["pdf", "doc", "docx", "odt", "rtf", "txt", "xlsx", "xlsm", "xltx", "xlsb"] , 
                 "pictures": ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "avif", "webp"], 
                 "music": ["mp3", "wav", "flac", "ogg", "aac"], 
                 "videos": ["mp4", "avi", "mov", "mkv", "wmv"]}
 
-is_running = True #used for pause and continue options
-is_exit = threading.Event() #used for properly exiting the app
+APP_NAME = "Download Sorter"
 
 DOWNLOAD_FOLDER_PATH = os.getenv("DOWNLOAD_FOLDER_PATH")
 
@@ -26,7 +27,18 @@ PICTURES_FOLDER_PATH = os.getenv("PICTURES_FOLDER_PATH")
 MUSIC_FOLDER_PATH = os.getenv("MUSIC_FOLDER_PATH")
 VIDEOS_FOLDER_PATH = os.getenv("VIDEOS_FOLDER_PATH")
 
-APP_NAME = "Download Sorter"
+LOG_FILE = os.getenv("LOG_FILE")
+
+os.makedirs(f"{LOG_FILE}/Download Sorter/Logs", mode=0o770, exist_ok=True)
+
+logging.basicConfig(filename=f"{LOG_FILE}/Download Sorter/Logs/logs.log",
+                    level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - %(message)s")
+
+logger = logging.getLogger()
+
+is_running = True #used for pause and continue options
+is_exit = threading.Event() #used for properly exiting the app
 
 class DownloadHanlder(FileSystemEventHandler):
     def on_created(self, event):
@@ -80,12 +92,14 @@ class DownloadHanlder(FileSystemEventHandler):
                                 shutil.move(DOWNLOAD_FOLDER_PATH + f"/{file}", VIDEOS_FOLDER_PATH + f"/{file}")
         except NameError:
             error_message = f"{APP_NAME} ran into a problem: {NameError}"
-            print(f"Error in download_sort function: {error_message}")
+            logger.exception(f"Error in download_sort function: {error_message}")
+            #print(f"Error in download_sort function: {error_message}")
 
             try:
                 subprocess.run(["cmd", "/c", f"echo {error_message} && pause"]) #opens cmd and shows message and pauses so it won't close
             except NameError:
-                print(f"Failed to open cmd: {NameError}")
+                logger.exception(f"Failed to open cmd: {NameError}")
+                #print(f"Failed to open cmd: {NameError}")
 
 download_event_handler = DownloadHanlder() 
 
@@ -131,7 +145,8 @@ def download_surveillance():#sets up the observer and starts the download survei
         observer.schedule(download_event_handler, DOWNLOAD_FOLDER_PATH, recursive=False)
         observer.start()
         
-        print(f"{APP_NAME} has started and monitoring downloads...")
+        logger.info(f"{APP_NAME} has started and monitoring downloads...")
+        # print(f"{APP_NAME} has started and monitoring downloads...")
 
         while not is_exit.is_set(): # continuously checks the exit state
             time.sleep(1)
@@ -140,7 +155,8 @@ def download_surveillance():#sets up the observer and starts the download survei
         observer.stop()
         observer.join()
     except NameError:
-        print(f"In download surveillance: {NameError}")
+        logger.exception(f"In download surveillance: {NameError}")
+        # print(f"In download surveillance: {NameError}")
 
 def icon_initialize(): #sets up icon, starts it and its menu and 
     try:
@@ -157,7 +173,8 @@ def icon_initialize(): #sets up icon, starts it and its menu and
         ))
         icon.run(setup=None)
     except NameError:
-        print(f"In main: {NameError}")
+        logger.exception(f"In icon initialize functions: {NameError}")
+        # print(f"In icon initialize functions: {NameError}")
 
 
 
@@ -175,4 +192,5 @@ if __name__ == "__main__":
             thread_2.join()
 
     except NameError:
-        print(NameError)
+        logger.exception(f"In main thread: {NameError}")
+        #print(f"In main thread: {NameError}")
