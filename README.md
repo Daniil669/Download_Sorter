@@ -109,4 +109,6 @@ These logs include:
 
 - Timestamped file movements
 
+- Pause, continue and exit actions
+
 - Errors and exceptions

@@ -83,12 +83,17 @@ class DownloadHanlder(FileSystemEventHandler):
                         match file_type:
                             case "documents":
                                 shutil.move(DOWNLOAD_FOLDER_PATH + f"/{file}", DOCUMENTS_FOLDER_PATH + f"/{file}")
+                                logger.info(f"File f{file} moved to {DOCUMENTS_FOLDER_PATH}")
                             case "pictures":
                                 shutil.move(DOWNLOAD_FOLDER_PATH + f"/{file}", PICTURES_FOLDER_PATH + f"/{file}")
+                                logger.info(f"File f{file} moved to {PICTURES_FOLDER_PATH}")
                             case "music":
                                 shutil.move(DOWNLOAD_FOLDER_PATH + f"/{file}", MUSIC_FOLDER_PATH + f"/{file}")
+                                logger.info(f"File f{file} moved to {MUSIC_FOLDER_PATH}")
                             case "videos":
                                 shutil.move(DOWNLOAD_FOLDER_PATH + f"/{file}", VIDEOS_FOLDER_PATH + f"/{file}")
+                                logger.info(f"File f{file} moved to {VIDEOS_FOLDER_PATH}")
+                            
         except NameError:
             error_message = f"{APP_NAME} ran into a problem: {NameError}"
             logger.exception(f"Error in download_sort function: {error_message}")
@@ -128,12 +133,15 @@ def change_app_state():
 def icon_actions(icon, query):
     global is_running, is_exit, download_event_handler
     if str(query) == "Pause":
+        logger.info("Paused...")
         change_app_state()
     elif str(query) == "Continue":
+        logger.info("Continued...")
         download_event_handler.sort_download()
         change_app_state()
     elif str(query) == "Exit":
         icon.stop()
+        logger.info("Exit.")
         is_exit.set() #signal the observer to stop
 
 
