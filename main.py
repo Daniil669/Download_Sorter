@@ -31,22 +31,31 @@ APP_NAME = "Download Sorter"
 class DownloadHanlder(FileSystemEventHandler):
     def on_created(self, event):
         global is_running
-        if not is_running: #check the global state of the app
-           return
-         
         if event.is_directory: #checks if event was done to the directory itself like renaming and ignores it
             return
+        
+        if not is_running: #check the global state of the app
+           return
+        elif not os.path.exists(event.src_path):
+            return
+        else:
+            self.sort_download(event)
 
+    def sort_download(self, event=None):
         number_of_files_prev = len(os.listdir(DOWNLOAD_FOLDER_PATH))
-        file_path = event.src_path
-
+        file_path = ""
+        if event != None:
+            file_path = event.src_path
+            
+        time.sleep(0.5)
         try:
-
             while True: # checks if a file is still downloading; nothing happens if file was cancelled or still downloading, after it's been downloaded it's sorted out
-                if os.path.exists(file_path):
+                if os.path.exists(file_path) and os.path.basename(file_path).split('.')[-1] == "tmp":
                     time.sleep(0.5)
                     continue
                 elif number_of_files_prev > len(os.listdir(DOWNLOAD_FOLDER_PATH)):
+                    return
+                elif not os.path.exists(file_path):
                     return
                 else:
                     break
@@ -78,6 +87,8 @@ class DownloadHanlder(FileSystemEventHandler):
             except NameError:
                 print(f"Failed to open cmd: {NameError}")
 
+download_event_handler = DownloadHanlder() 
+
 # Generate an image and draw a pattern
 def create_image(width, height, color1, color2):
     image = Image.new('RGB', (width, height), color1)
@@ -102,28 +113,27 @@ def change_app_state():
 
 #tray icon actions; query is basically option in the menu
 def icon_actions(icon, query):
-    global is_running, is_exit
+    global is_running, is_exit, download_event_handler
     if str(query) == "Pause":
         change_app_state()
     elif str(query) == "Continue":
+        download_event_handler.sort_download()
         change_app_state()
     elif str(query) == "Exit":
         icon.stop()
-        is_exit.set()
-        #signal the observer to stop
+        is_exit.set() #signal the observer to stop
 
 
-def download_surveillance():
-    global is_exit
+def download_surveillance():#sets up the observer and starts the download surveillance
+    global is_exit, download_event_handler
     try:
-        event_handler = DownloadHanlder()
         observer = Observer()
-        observer.schedule(event_handler, DOWNLOAD_FOLDER_PATH, recursive=False)
+        observer.schedule(download_event_handler, DOWNLOAD_FOLDER_PATH, recursive=False)
         observer.start()
         
         print(f"{APP_NAME} has started and monitoring downloads...")
 
-        while not is_exit.is_set():
+        while not is_exit.is_set(): # continuously checks the exit state
             time.sleep(1)
             continue
 
@@ -132,7 +142,7 @@ def download_surveillance():
     except NameError:
         print(f"In download surveillance: {NameError}")
 
-def icon_initialize():
+def icon_initialize(): #sets up icon, starts it and its menu and 
     try:
         icon = pystray.Icon(
         'Download_Sorter',
@@ -145,7 +155,7 @@ def icon_initialize():
                 icon_actions
             )
         ))
-        icon.run()
+        icon.run(setup=None)
     except NameError:
         print(f"In main: {NameError}")
 
@@ -158,6 +168,7 @@ if __name__ == "__main__":
 
         thread_1.start()
         thread_2.start()
+        
 
         if is_exit.wait(timeout=None):
             thread_1.join()
