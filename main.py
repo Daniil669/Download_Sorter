@@ -10,8 +10,7 @@ from PIL import Image, ImageDraw
 import threading #to surveillance for downloading folder and interact with trace icon
 import logging #replace prints with logs
 
-dotenv.load_dotenv()
-
+dotenv.load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env')) # makes sure that paths are loaded from .env
 
 extensions = {"documents": ["pdf", "doc", "docx", "odt", "rtf", "txt", "xlsx", "xlsm", "xltx", "xlsb"] , 
                 "pictures": ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "avif", "webp"], 
