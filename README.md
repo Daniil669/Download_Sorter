@@ -69,7 +69,7 @@ python main.py
 Package the script using PyInstaller:
 
 ```bash
-pyinstaller --onefile --windowed --add-data ".env;." --add-data "README.md;." main.py
+pyinstaller --onefile --windowed --add-data ".env;." main.py
 ```
 The `.exe` file will appear in the dist/ folder.
 
