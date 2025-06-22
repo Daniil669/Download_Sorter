@@ -40,7 +40,7 @@ is_running = True #used for pause and continue options
 is_exit = threading.Event() #used for properly exiting the app
 
 class DownloadHanlder(FileSystemEventHandler):
-    def on_created(self, event):
+    def on_any_event(self, event):
         global is_running
         if event.is_directory: #checks if event was done to the directory itself like renaming and ignores it
             return
